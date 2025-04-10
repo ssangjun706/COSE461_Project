@@ -8,3 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Log files
+wandb/
+
+# Environment files
+.env
+
+# Data files
+data/processed/*
+data/raw/*
