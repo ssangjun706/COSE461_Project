@@ -13,4 +13,4 @@ wandb/
 .env
 
 # Temp files
-__*
+.*

@@ -3,13 +3,13 @@ import logging
 
 from typing import Any, Dict, Optional, List
 from vllm import LLM
-from huggingface_hub import snapshot_download
+from vllm import SamplingParams
 
 
 class LLMProcessor:
     def __init__(
         self,
-        model_name: str,
+        model_path: str,
         mode: str = "chat",
         tokenizer: str = None,
         quantization: Optional[str] = None,
@@ -23,7 +23,7 @@ class LLMProcessor:
         Initialize LLMProcessor
 
         Args:
-            model_name (str): Hugging Face model name.
+            model_path (str): Hugging Face model path.
             mode (str): Processing mode ('chat' or 'generation').
             quantization (Optional[str]): Quantization method (e.g., 'awq', 'gptq', 'bitsandbytes', None).
             tensor_parallel_size (int): Tensor parallel processing size.
@@ -35,7 +35,7 @@ class LLMProcessor:
         if mode.lower() not in ["chat", "generation"]:
             raise ValueError("Mode must be either 'chat' or 'generation'.")
 
-        self.model_path = self._find_path(model_name)
+        self.model_path = model_path
         # self.tokenizer_path = self._find_path(tokenizer) if tokenizer else None
         self.mode = mode
         self.quantization = quantization
@@ -45,7 +45,7 @@ class LLMProcessor:
         self.sampling_params_dict = sampling_params_dict
         self.gpu_memory_utilization = gpu_memory_utilization
 
-        logging.info(f"Initializing vLLM server for model: {model_name}...")
+        logging.info(f"Initializing vLLM server for model: {model_path}...")
         start_time = time.time()
         try:
             self.instance = LLM(
@@ -62,21 +62,7 @@ class LLMProcessor:
                 f"Model loaded successfully in {end_time - start_time:.2f} seconds."
             )
         except Exception as e:
-            raise RuntimeError(f"Failed to load model {model_name} with error: {e}")
-
-    def _find_path(self, model_name: str):
-        try:
-            snapshot_path = snapshot_download(
-                repo_id=model_name,
-                local_files_only=True,
-                ignore_patterns=["*.safetensors", "*.bin"],
-            )
-
-            return snapshot_path
-        except Exception:
-            assert (
-                False
-            ), f"Could not get snapshot path for {model_name} from cache. Try download again"
+            raise RuntimeError(f"Failed to load model {model_path} with error: {e}")
 
     def interactive(self, use_chat_template: bool = True):
         """
