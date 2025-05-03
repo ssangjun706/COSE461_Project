@@ -9,5 +9,9 @@ import src.utils
 from huggingface_hub import snapshot_download
 
 if __name__ == "__main__":
-    model_id = "Qwen/Qwen3-32B"
+    if len(sys.argv) < 2:
+        print("Usage: python download_hf_model.py <model_id>")
+        sys.exit(1)
+
+    model_id = sys.argv[1]
     snapshot_download(model_id)

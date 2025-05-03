@@ -26,9 +26,23 @@ def find_model_path(model_name: str):
             local_files_only=True,
             ignore_patterns=["*.safetensors", "*.bin"],
         )
-
         return snapshot_path
-    except Exception:
-        assert (
-            False
-        ), f"Could not get snapshot path for {model_name} from cache. Try download again"
+    except Exception as e:
+        raise RuntimeError(f"Failed to find model path for '{model_name}': {e}")
+
+
+def list_models():
+    """
+    Lists all cached models in the Hugging Face cache directory.
+
+    Returns:
+        List[str]: A list of model names or paths found in the cache.
+    """
+    # Skeleton implementation
+    cached_models = []
+    hub_cache_dir = os.environ["HUGGINGFACE_HUB_CACHE"]
+    for item in os.listdir(hub_cache_dir):
+        if item.startswith("models--"):
+            item = item.replace("models--", "").replace("--", "/")
+            cached_models.append(item)
+    return cached_models
