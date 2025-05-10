@@ -28,7 +28,8 @@ Below is the input data in a structured format:
 
 Now, generate a natural language prompt suitable for predicting '{target}'.
 The model's response should be one of: {target_values}.
-Only output the prompt, without explanation.
+
+**IMPORTANT: The final prompt must explicitly instruct the model to respond with ONLY the prediction value and NO reasoning or explanation whatsoever.**
 """
 
     return list(map(build_meta_prompt, data))

@@ -3,13 +3,6 @@ import sys
 import uvicorn
 import time
 import argparse
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()],
-)
 
 root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
@@ -20,7 +13,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import sys
-from io import StringIO
 
 
 class InferenceRequest(BaseModel):
@@ -32,7 +24,7 @@ class InferenceResponse(BaseModel):
     time_taken: float
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3,4,5,6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5"
 
 model = None
 
@@ -44,34 +36,25 @@ parser.add_argument(
 )
 parser.add_argument("--tensor_parallel_size", type=int, default=4)
 parser.add_argument("--num_sequences", type=int, default=1)
-parser.add_argument("--max_tokens", type=int, default=32)
+parser.add_argument("--max_model_len", type=int, default=1024)
+parser.add_argument("--max_tokens", type=int, default=16)
 parser.add_argument("--temperature", type=float, default=0.15)
 args = parser.parse_args()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    logging.info(f"Initializing vLLM server for model: {args.model_name}...")
-
+async def lifespan(_: FastAPI):
     global model
-    original_stdout = sys.stdout
-    original_stderr = sys.stderr
-    sys.stdout = StringIO()
-    sys.stderr = StringIO()
+    model = LLMTrainer(
+        model_name=args.model_name,
+        mode="classify",
+        tensor_parallel_size=args.tensor_parallel_size,
+        max_model_len=args.max_model_len,
+        max_tokens=args.max_tokens,
+        num_sequences=args.num_sequences,
+        temperature=args.temperature,
+    )
 
-    try:
-        model = LLMTrainer(
-            model_name=args.model_name,
-            tensor_parallel_size=args.tensor_parallel_size,
-            max_tokens=args.max_tokens,
-            num_sequences=args.num_sequences,
-            temperature=args.temperature,
-        )
-    finally:
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
-
-    logging.info(f"Model {args.model_name} loaded successfully")
     yield
     del model
 

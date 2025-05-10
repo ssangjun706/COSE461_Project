@@ -26,6 +26,7 @@ class LLMTrainer:
         self,
         model_name: str,
         tensor_parallel_size: int,
+        mode: str = "generation",
         max_model_len: int = 512,
         max_tokens: int = 512,
         num_sequences: int = 1,
@@ -45,7 +46,7 @@ class LLMTrainer:
             temperature (float): Sampling temperature.
         """
 
-        self.mode = "generation"
+        self.mode = mode
         self.quantization = None
         self.gpu_memory_utilization = gpu_memory_utilization
         self.sampling_params_dict = SamplingParams(

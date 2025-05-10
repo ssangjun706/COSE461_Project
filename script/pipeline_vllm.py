@@ -1,11 +1,11 @@
 import os
 import sys
 import argparse
+import requests
 
 root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
-
 
 from src.utils import process
 
@@ -19,7 +19,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_name",
     type=str,
-    default="mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+    # default="mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+    default="meta-llama/Llama-3.3-70B-Instruct",
 )
 parser.add_argument(
     "--dataset",
@@ -38,14 +39,38 @@ parser.add_argument(
     default=1,
     help="Number of sequences to generate per sample",
 )
-parser.add_argument("--max_tokens", type=int, default=512)
+parser.add_argument("--max_tokens", type=int, default=1024)
 parser.add_argument("--batch_size", type=int, default=1)
 parser.add_argument("--temperature", type=float, default=0.7)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
+API_URL = "http://localhost:23456"
+
+
+def request(prompts: list[str]):
+    response = requests.post(
+        f"{API_URL}/generate",
+        json={"prompts": prompts},
+    )
+    response.raise_for_status()
+    return response.json()["text"]
+
+
+def check_server_status():
+    try:
+        response = requests.get(f"{API_URL}/health")
+        if response.status_code == 200 and response.json():
+            print(f"Inference server is ready")
+        else:
+            print("Error: Inference server is not ready or model is not loaded")
+            exit(1)
+    except Exception as e:
+        print(f"Error connecting to inference server: {e}")
 
 
 if __name__ == "__main__":
+    check_server_status()
     args = parser.parse_args()
 
     dataset = TitanicDataset(args.dataset, train=True)
@@ -66,16 +91,17 @@ if __name__ == "__main__":
         )  # processing input(json) into prompt
         outputs = model.generate(prompts)
 
+        # Fine-tuning the model
+        # ...
+
         # For debugging purposes
         print("=" * 50)
         print(f"Input Data: {X}")
         print(f"Output Data: {y}")
-        print("=" * 50)
         print()
 
         for x in outputs:
-            print("=" * 50)
             print(x[0])
-            print("=" * 50)
-            print("\nPress Enter to continue or Ctrl+C to exit.", end="")
-            input()
+            t = request(x[0])
+            print(t)
+        print("=" * 50)
