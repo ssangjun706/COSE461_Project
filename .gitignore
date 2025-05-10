@@ -14,3 +14,9 @@ wandb/
 
 # Temp files
 .*
+
+# Data files
+*.csv
+*.json
+*.zip
+dataset/

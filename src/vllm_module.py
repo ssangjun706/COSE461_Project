@@ -1,166 +1,124 @@
+import os
+import sys
 import time
 import logging
 
-from typing import Any, Dict, Optional, List
-from vllm import LLM
-from vllm import SamplingParams
+root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+if root not in sys.path:
+    sys.path.append(root)
+
+from src.hf_utils import find_model_path
+
+from typing import Sequence
+from vllm import LLM, SamplingParams, PromptType, RequestOutput
+from vllm.lora.request import LoRARequest
+from vllm.prompt_adapter.request import PromptAdapterRequest
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 
-class LLMProcessor:
+class LLMTrainer:
     def __init__(
         self,
-        model_path: str,
-        mode: str = "chat",
-        tokenizer: str = None,
-        quantization: Optional[str] = None,
+        model_name: str,
+        tensor_parallel_size: int,
         max_model_len: int = 512,
-        tensor_parallel_size: int = 1,
-        gpu_memory_utilization: float = 0.90,
+        max_tokens: int = 512,
+        num_sequences: int = 1,
         dtype: str = "auto",
-        sampling_params_dict: Optional[Dict[str, Any]] = None,
+        temperature: float = 0.15,
+        gpu_memory_utilization: float = 0.90,
     ):
         """
         Initialize LLMProcessor
 
         Args:
-            model_path (str): Hugging Face model path.
-            mode (str): Processing mode ('chat' or 'generation').
-            quantization (Optional[str]): Quantization method (e.g., 'awq', 'gptq', 'bitsandbytes', None).
+            model_name (str): Hugging Face model name.
             tensor_parallel_size (int): Tensor parallel processing size.
-            gpu_memory_utilization (float): GPU memory utilization limit.
             dtype (str): Model data type ('auto', 'bfloat16', 'float16').
-            sampling_params_dict (Optional[Dict[str, Any]]): vLLM SamplingParams settings to use in Generation mode.
+            num_sequences (int): Number of sequences to generate per sample.
+            max_model_len (int): Maximum model length.
+            temperature (float): Sampling temperature.
         """
 
-        if mode.lower() not in ["chat", "generation"]:
-            raise ValueError("Mode must be either 'chat' or 'generation'.")
+        self.mode = "generation"
+        self.quantization = None
+        self.gpu_memory_utilization = gpu_memory_utilization
+        self.sampling_params_dict = SamplingParams(
+            n=num_sequences,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
 
-        self.model_path = model_path
-        # self.tokenizer_path = self._find_path(tokenizer) if tokenizer else None
-        self.mode = mode
-        self.quantization = quantization
+        self.model_path = find_model_path(model_name)
         self.tensor_parallel_size = tensor_parallel_size
         self.dtype = dtype
         self.max_model_len = max_model_len
-        self.sampling_params_dict = sampling_params_dict
-        self.gpu_memory_utilization = gpu_memory_utilization
 
-        logging.info(f"Initializing vLLM server for model: {model_path}...")
+        logging.info(f"Initializing vLLM server for model: {model_name}...")
         start_time = time.time()
         try:
             self.instance = LLM(
                 model=self.model_path,
-                tokenizer=tokenizer,
                 max_model_len=self.max_model_len,
                 tensor_parallel_size=self.tensor_parallel_size,
                 quantization=self.quantization,
                 dtype=self.dtype,
                 gpu_memory_utilization=self.gpu_memory_utilization,
             )
-            end_time = time.time()
             logging.info(
-                f"Model loaded successfully in {end_time - start_time:.2f} seconds."
+                f"Model loaded successfully in {time.time() - start_time:.2f} seconds."
             )
         except Exception as e:
-            raise RuntimeError(f"Failed to load model {model_path} with error: {e}")
+            logging.error(f"Failed to load model {model_name} with error: {e}")
+            exit(1)
 
-    def interactive(self, use_chat_template: bool = True):
-        """
-        Start an interactive chat session with the LLM.
+    def generate(
+        self,
+        prompts: PromptType | Sequence[PromptType],
+        lora_request: list[LoRARequest] | LoRARequest | None = None,
+        prompt_adapter_request: PromptAdapterRequest | None = None,
+    ) -> list[list[str]]:
+        """Generates the completions for the input prompts.
 
-        Args:
-            use_chat_template (bool): Whether to use chat template for conversation history.
-        """
-        if self.mode != "chat":
-            raise ValueError("Interactive mode is only available in 'chat' mode.")
-
-        print("\n--- Interactive Chat Session ---")
-        print("Type 'quit' or 'exit' to end the session.")
-
-        conversation_history = []
-
-        while True:
-            try:
-                user_input = input("You: ")
-                if user_input.lower() in ["quit", "exit"]:
-                    print("Exiting chat session.")
-                    break
-                if not user_input.strip():
-                    continue
-
-                if use_chat_template and hasattr(
-                    self.instance.get_tokenizer(),
-                    "apply_chat_template",
-                ):
-                    tokenizer = self.instance.get_tokenizer()
-                    conversation_history.append({"role": "user", "content": user_input})
-                    prompt_text = tokenizer.apply_chat_template(
-                        conversation_history,
-                        tokenize=False,
-                        add_generation_prompt=True,
-                    )
-                else:
-                    prompt_text = user_input
-
-                print("LLM: Thinking...", end="\r")
-                start_time = time.time()
-                outputs = self.instance.generate(
-                    [prompt_text],
-                    self.sampling_params_dict,
-                    use_tqdm=False,
-                )
-                end_time = time.time()
-                print("LLM:          ", end="\r")
-
-                generated_text = outputs[0].outputs[0].text.strip()
-                print(f"LLM: {generated_text}")
-                print(f"(Generated in {end_time - start_time:.2f}s)")
-
-                if use_chat_template and hasattr(
-                    self.instance.get_tokenizer(), "apply_chat_template"
-                ):
-                    conversation_history.append(
-                        {"role": "assistant", "content": generated_text}
-                    )
-
-            except KeyboardInterrupt:
-                print("\nExiting chat session.")
-                break
-            except Exception as e:
-                print(f"\nAn error occurred: {e}")
-
-    def generate(self, batch_prompts: List[str]) -> List[List[str]]:
-        """
-        Process a batch of texts and return the outputs from the LLM.
+        This automatically batches the given prompts, considering
+        the memory constraint. For the best performance, put all of your prompts
+        into a single list and pass it to this method.
 
         Args:
-            batch_texts (List[str]): List of text strings to process (mini-batch).
-
+            prompts: The prompts to the LLM. You may pass a sequence of prompts
+                for batch inference.
+            lora_request: LoRA request to use for generation, if any.
+            prompt_adapter_request: Prompt Adapter request to use for
+                generation, if any.
         Returns:
-            List[List[str]]: List of generated results for each text, where each inner list contains n outputs.
+            A list of ``RequestOutput`` objects containing the
+            generated completions in the same order as the input prompts.
+
         """
-        if not batch_prompts:
+        if not prompts:
             return []
 
         start_time = time.time()
 
-        if self.mode == "generation":
-            outputs = self.instance.generate(
-                batch_prompts,
-                self.sampling_params_dict,
-                use_tqdm=False,
-            )
+        outputs = self.instance.generate(
+            prompts,
+            sampling_params=self.sampling_params_dict,
+            lora_request=lora_request,
+            prompt_adapter_request=prompt_adapter_request,
+            use_tqdm=False,
+        )
 
-            # Extract all outputs for each prompt
-            generated_texts = []
-            for output in outputs:
-                prompt_outputs = [
-                    output.outputs[i].text.strip() for i in range(len(output.outputs))
-                ]
-                generated_texts.append(prompt_outputs)
+        generated_texts = []
+        for output in outputs:
+            prompt_outputs = [
+                output.outputs[i].text.strip() for i in range(len(output.outputs))
+            ]
+            generated_texts.append(prompt_outputs)
 
-            logging.info(f"Processed in {time.time() - start_time:.2f} seconds.")
-            return generated_texts
-
-        else:
-            raise RuntimeError("Invalid mode encountered during processing.")
+        logging.info(f"Processed in {time.time() - start_time:.2f} seconds.")
+        return generated_texts

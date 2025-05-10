@@ -1,48 +1,34 @@
-import os
-from dotenv import load_dotenv
-
-HF_HOME = "/DATA2/nara/.cache/huggingface"
-
-os.environ["HF_HOME"] = HF_HOME
-os.environ["HF_DATASETS_CACHE"] = os.path.join(HF_HOME, "datasets")
-os.environ["HUGGINGFACE_HUB_CACHE"] = os.path.join(HF_HOME, "hub")
-os.environ["HF_METRICS_CACHE"] = os.path.join(HF_HOME, "metrics")
-
-from huggingface_hub import login, snapshot_download
+from typing import Any
 
 
-load_dotenv()
-HF_TOKEN = os.getenv("HUGGINGFACE_ACCESS_TOKEN")
-if not HF_TOKEN:
-    raise ValueError("Environment variable must be set for Huggingface login.")
+def process(
+    data: str,
+    target: str,
+    target_values: list[Any],
+) -> list[str]:
+    target_values = "or ".join(map(str, target_values))
 
-login(token=HF_TOKEN)
+    def build_meta_prompt(X_data: Any) -> str:
+        return f"""You are a system that generates natural language prompts for LLM (Predictor), based on structured input data.
 
+Your task is to convert the given input data into a natural language prompt that allows a LLM to predict the value of the target column '{target}'.
 
-def find_model_path(model_name: str):
-    try:
-        snapshot_path = snapshot_download(
-            repo_id=model_name,
-            local_files_only=True,
-            ignore_patterns=["*.safetensors", "*.bin"],
-        )
-        return snapshot_path
-    except Exception as e:
-        raise RuntimeError(f"Failed to find model path for '{model_name}': {e}")
+The generated prompt must follow these rules:
 
+1. Do not modify the input data. Use the values exactly as provided.
+2. Include *some* (or *all*) fields and their values from the input.
+3. The prompt must be self-contained and must not assume external knowledge.
+4. Encourage the language model to respond *only* with one of the following values: {target_values}.
+5. Express the prompt in varied and natural English, such as a question or instruction.
+6. The prompt should be in complete, fluent sentences and must mention all input fields clearly.
 
-def list_models():
-    """
-    Lists all cached models in the Hugging Face cache directory.
+Below is the input data in a structured format:
 
-    Returns:
-        List[str]: A list of model names or paths found in the cache.
-    """
-    # Skeleton implementation
-    cached_models = []
-    hub_cache_dir = os.environ["HUGGINGFACE_HUB_CACHE"]
-    for item in os.listdir(hub_cache_dir):
-        if item.startswith("models--"):
-            item = item.replace("models--", "").replace("--", "/")
-            cached_models.append(item)
-    return cached_models
+{X_data}
+
+Now, generate a natural language prompt suitable for predicting '{target}'.
+The model's response should be one of: {target_values}.
+Only output the prompt, without explanation.
+"""
+
+    return list(map(build_meta_prompt, data))

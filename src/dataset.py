@@ -4,6 +4,9 @@ import numpy as np
 from typing import List
 from torch.utils.data import Dataset
 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
 
 class IncomeDataset(Dataset):
     def __init__(
@@ -74,3 +77,47 @@ class IncomeDataset(Dataset):
     #     text += f"then what is the person's income? Choose between ['<=50K', '>50K'].\n"
     #     text += "Answer: "
     #     return text
+
+
+class TitanicDataset(Dataset):
+    def __init__(
+        self,
+        path: str,
+        target: str = "Survived",
+        target_values: list = [0, 1],
+        train: bool = True,
+        shuffle: bool = True,
+        train_size: float = 0.8,
+        random_state: int = 42,
+    ):
+        super().__init__()
+        self.target = target
+        self.target_values = target_values
+        df = pd.read_csv(path)
+
+        assert (
+            target in df.columns
+        ), f"Target column '{target}' not found in the dataframe."
+
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            train_size=train_size,
+            random_state=random_state,
+            shuffle=shuffle,
+            stratify=y,
+        )
+
+        self.X = X_train if train else X_test
+        self.y = y_train if train else y_test
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        X_dict = str(self.X.iloc[idx].to_dict())
+        y_value = self.y.iloc[idx].item()
+        return X_dict, y_value

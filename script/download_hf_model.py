@@ -5,7 +5,7 @@ root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
-import src.utils
+import src.hf_utils
 from huggingface_hub import snapshot_download
 
 if __name__ == "__main__":

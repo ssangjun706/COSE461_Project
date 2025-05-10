@@ -7,7 +7,7 @@ if root not in sys.path:
     sys.path.append(root)
 
 from src.hf_module import LLMLoader
-from src.dataset_classes import IncomeDataset
+from src.dataset import IncomeDataset
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 from tqdm import tqdm
@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_name",
     type=str,
-    default="meta-llama/Llama-3.3-70B-Instruct",
+    default="Qwen/Qwen3-32B",
 )
 parser.add_argument(
     "--dataset",
@@ -30,7 +30,7 @@ parser.add_argument("--batch_size", type=int, default=4)
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "3,4,5,6"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
     args = parser.parse_args()
 
     _data = load_dataset(args.dataset, split="train")
