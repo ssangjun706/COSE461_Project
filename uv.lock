@@ -216,6 +216,19 @@ wheels = [
 ]
 
 [[package]]
+name = "bitsandbytes"
+version = "0.45.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "torch" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/b7/cb5ce4d1a382cf53c19ef06c5fc29e85f5e129b4da6527dd207d90a5b8ad/bitsandbytes-0.45.5-py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:a5453f30cc6aab6ccaac364e6bf51a7808d3da5f71763dffeb6d9694c59136e4", size = 76059261, upload-time = "2025-04-07T13:32:52.573Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/4c/77b535e025ce780d2ada8271c1e481fb7337c1df2588a52fe1c9bd87d2e8/bitsandbytes-0.45.5-py3-none-win_amd64.whl", hash = "sha256:ed1c61b91d989d6a33fd05737d6edbf5086d8ebc89235ee632c7a19144085da2", size = 75430204, upload-time = "2025-04-07T13:32:57.553Z" },
+]
+
+[[package]]
 name = "blake3"
 version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -481,12 +494,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "bitsandbytes" },
     { name = "datasets" },
     { name = "flash-attn" },
     { name = "huggingface-hub" },
     { name = "ninja" },
     { name = "packaging" },
     { name = "pandas" },
+    { name = "peft" },
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "scikit-learn" },
@@ -506,12 +521,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=1.6.0" },
+    { name = "bitsandbytes", specifier = ">=0.45.5" },
     { name = "datasets", specifier = ">=3.5.1" },
     { name = "flash-attn", specifier = ">=2.7.4.post1" },
     { name = "huggingface-hub", specifier = ">=0.30.2" },
     { name = "ninja", specifier = ">=1.11.1.4" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "peft", specifier = ">=0.15.2" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
@@ -2372,6 +2389,27 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/27/9c/9c366aed65acb40a97842ce1375a87b27ea37d735fc9717f7729bae3cc00/partial_json_parser-0.2.1.1.post5.tar.gz", hash = "sha256:992710ac67e90b367921d52727698928040f7713ba7ecb33b96371ea7aec82ca", size = 10313, upload-time = "2025-01-08T15:44:02.147Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8c/ee/a9476f01f27c74420601be208c6c2c0dd3486681d515e9d765931b89851c/partial_json_parser-0.2.1.1.post5-py3-none-any.whl", hash = "sha256:627715aaa3cb3fb60a65b0d62223243acaa6c70846520a90326fef3a2f0b61ca", size = 10885, upload-time = "2025-01-08T15:44:00.987Z" },
+]
+
+[[package]]
+name = "peft"
+version = "0.15.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/65/faa18cd8ffbe0f742c3f2559770646cce2574b9cd28a2a05e8d36f64e968/peft-0.15.2.tar.gz", hash = "sha256:7059029f4d42a092ded1aa117dd366a46084aef638bdd593f6ab0195d5427fcd", size = 472952, upload-time = "2025-04-15T15:27:53.09Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/85/8e6ea3d1089f2b6de3c1cd34bbbd7560912af9d34b057be3b8b8fefe1da3/peft-0.15.2-py3-none-any.whl", hash = "sha256:0dfc942b03b7af4b7267cd4e30b15e3a4a1d277adc581ce6245fc13f1f93d0a0", size = 411051, upload-time = "2025-04-15T15:27:50.799Z" },
 ]
 
 [[package]]

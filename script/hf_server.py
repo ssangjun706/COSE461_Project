@@ -8,7 +8,7 @@ root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
-from src.vllm_module import LLMTrainer
+from src.hf_module import HFLLMLoader
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -17,16 +17,17 @@ import sys
 
 
 class InferenceRequest(BaseModel):
-    prompts: list[str]
+    prompts: str | list[str]
     sampling_params: dict
+    decode: bool | None = None
 
 
 class InferenceResponse(BaseModel):
-    text: list[list[str]]
+    text: list[str] | list[list[str]]
     time_taken: float
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
 model = None
 
@@ -34,9 +35,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_name",
     type=str,
-    default="meta-llama/Llama-3.3-70B-Instruct",
+    default="meta-llama/Llama-4-Scout-17B-16E-Instruct",
 )
-parser.add_argument("--tensor_parallel_size", type=int, default=4)
 args = parser.parse_args()
 
 
@@ -44,16 +44,13 @@ args = parser.parse_args()
 async def lifespan(_: FastAPI):
     global model
 
-    model = LLMTrainer(
-        model_name=args.model_name,
-        tensor_parallel_size=args.tensor_parallel_size,
-    )
+    model = HFLLMLoader(model_name=args.model_name)
 
     yield
     del model
 
 
-app = FastAPI(title="Inference LLM Server", lifespan=lifespan)
+app = FastAPI(title="Prompt LLM Server", lifespan=lifespan)
 
 
 @app.post("/generate", response_model=InferenceResponse)
@@ -65,7 +62,9 @@ async def generate_text(request: InferenceRequest):
 
     start_time = time.time()
     outputs = model.generate(
-        prompts=request.prompts, sampling_params=request.sampling_params
+        prompts=request.prompts,
+        sampling_params=request.sampling_params,
+        decode=request.decode,
     )
     time_taken = time.time() - start_time
 
@@ -80,4 +79,4 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("inference_server:app", host="localhost", port=23456)
+    uvicorn.run("hf_server:app", host="localhost", port=23458)

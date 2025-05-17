@@ -26,7 +26,7 @@ class InferenceResponse(BaseModel):
     time_taken: float
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
 
 model = None
 
@@ -34,9 +34,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_name",
     type=str,
-    default="meta-llama/Llama-3.3-70B-Instruct",
+    default="mistralai/Mistral-Small-3.1-24B-Instruct-2503",
 )
-parser.add_argument("--tensor_parallel_size", type=int, default=4)
+parser.add_argument("--tensor_parallel_size", type=int, default=2)
 args = parser.parse_args()
 
 
@@ -53,7 +53,7 @@ async def lifespan(_: FastAPI):
     del model
 
 
-app = FastAPI(title="Inference LLM Server", lifespan=lifespan)
+app = FastAPI(title="Prompt LLM Server", lifespan=lifespan)
 
 
 @app.post("/generate", response_model=InferenceResponse)
@@ -80,4 +80,4 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("inference_server:app", host="localhost", port=23456)
+    uvicorn.run("prompt_server:app", host="localhost", port=23457)
