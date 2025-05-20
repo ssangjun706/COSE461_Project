@@ -1,0 +1,38 @@
+{
+    "results": [
+        {
+            "accuracy": 0.720,
+            "parse_error": "10/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.675,
+            "parse_error": "13/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.681,
+            "parse_error": "15/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.653,
+            "parse_error": "15/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.681,
+            "parse_error": "14/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.670,
+            "parse_error": "11/179",
+            "type": "Llama-3.3-70B-Instruct"
+        },
+        {
+            "accuracy": 0.792,
+            "type": "Gemini-2.5-Pro-exp"
+        }
+    ]
+}

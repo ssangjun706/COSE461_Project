@@ -1,123 +1,119 @@
 import os
 import sys
-import re
+import torch
 
-from dotenv import load_dotenv
-
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("Environment variable must be set for Gemini API key.")
-
-
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-
-# from google import genai
-
 
 root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
-from src.utils import process, APIServer
-
+from src.utils import APIServer, process, parse
+from src.model import PromptModel
 from src.dataset import TitanicDataset
 
 
 DATASET_PATH = "../dataset/titanic-dataset.csv"
-CHOICE = ["DEAD", "ALIVE"]
-
-BATCH_SIZE = 16
-
-PROMPT_NUM_SEQUENCES = 1
-PROMPT_MAX_TOKENS = 2048
-# PROMPT_TEMPERATURE = 0.15
-
-INFERENCE_NUM_SEQUENCES = 1
-INFERENCE_MAX_TOKENS = 32
-# INFERENCE_TEMPERATURE = 0.15
+BATCH_SIZE = 4
+LEARNING_RATE = 1e-5
+NUM_EPOCHS = 1
 
 PROMPT_SAMPLING_PARAMS = {
-    "n": PROMPT_NUM_SEQUENCES,
-    "max_tokens": PROMPT_MAX_TOKENS,
-    # "temperature": PROMPT_TEMPERATURE,
+    "max_new_tokens": 2048,
+    "do_sample": True,
 }
 
 INFERENCE_SAMPLING_PARAMS = {
-    "n": INFERENCE_NUM_SEQUENCES,
-    "max_tokens": INFERENCE_MAX_TOKENS,
-    # "temperature": INFERENCE_TEMPERATURE,
+    "n": 1,
+    "max_new_tokens": 4,
 }
 
+MODEL = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
 
-def parse(text):
-    match = re.search(r"\\boxed\{(DEAD|ALIVE)\}", text)
-    if match and len(match.groups()) == 1:
-        return match.group(1)
-    else:
-        return "ERROR"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
+
+def train_epoch(
+    model: PromptModel,
+    dataset: Dataset,
+    inference_server: APIServer,
+):
+    model.train()
+    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+    for X, y in tqdm(data_loader):
+        meta_prompts = process(
+            data=X,
+            target=dataset.target,
+            target_values=dataset.target_values,
+        )
+
+        prompts, logits = model.generate(meta_prompts, PROMPT_SAMPLING_PARAMS)
+        y_pred = inference_server.request(prompts, INFERENCE_SAMPLING_PARAMS)
+
+        batch_rewards = []
+        for preds, y_i in zip(y_pred, y):
+            sample_rewards = [
+                1.0 if parse(p) == ("ALIVE" if y_i == 1 else "DEAD") else 0.0
+                for p in preds
+            ]
+            batch_rewards.append(sample_rewards)
+
+        batch_rewards = torch.tensor(batch_rewards, device=model.device)
+        # TODO: Implement Training Steps
 
 
 if __name__ == "__main__":
-    inference_server = APIServer("localhost", 23456)
-    prompt_server = APIServer("localhost", 23457)
-    # prompt_server = APIServer("localhost", 23457)
-    # inference_server = genai.Client(api_key=GEMINI_API_KEY)
+    server = APIServer("localhost", 23456)
+    prompt_model = PromptModel()
 
-    inference_server.check_status()
-    prompt_server.check_status()
+    train_data = TitanicDataset(DATASET_PATH, train=True)
 
-    dataset = TitanicDataset(DATASET_PATH, train=False, target_values=CHOICE)
-    target, target_values = dataset.target, dataset.target_values
-    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    for epoch in range(NUM_EPOCHS):
+        print(f"Epoch {epoch+1}/{NUM_EPOCHS}")
+        avg_loss = train_epoch(prompt_model, train_data, server)
+        print(f"Average Loss: {avg_loss:.4f}")
 
-    total_predictions = 0
-    total_parse_error = 0
-
-    for X, y in tqdm(data_loader):
-        # processing input(json) into prompt
-        meta_prompts = process(
-            data=X,
-            target=target,
-            target_values=target_values,
-        )
-
-        # Fine-tuning the model
-        # ...
-
-        # For debugging purposes
-        answer = ["ALIVE" if y_i == 1 else "DEAD" for y_i in y]
-
-        prompts = prompt_server.request(meta_prompts, PROMPT_SAMPLING_PARAMS)
-        flatten_prompts = [p for sample in prompts for p in sample]
-
-        # fn = lambda x: inference_server.models.generate_content(
-        #     model="gemini-2.5-flash-preview-04-17",
-        #     contents=x,
-        #     # config={
-        #     #     "response_mime_type": "text/x.enum",
-        #     #     "response_schema": Survival,
-        #     # },
+        # checkpoint_path = f"checkpoints/epoch_{epoch+1}.pt"
+        # os.makedirs("checkpoints", exist_ok=True)
+        # torch.save(
+        #     {
+        #         "epoch": epoch,
+        #         "model_state_dict": prompt_model.state_dict(),
+        #         "loss": avg_loss,
+        #     },
+        #     checkpoint_path,
         # )
 
-        y_pred = inference_server.request(flatten_prompts, INFERENCE_SAMPLING_PARAMS)
-        y_pred = [parse(r) for y in y_pred for r in y]
+    # Evaluation
+    # dataset = TitanicDataset(DATASET_PATH, train=False)
+    # data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-        # Calculate parsing error rate
-        parsing_errors = sum(1 for pred in y_pred if pred == "ERROR")
-        correct = sum(1 for a, b in zip(answer, y_pred) if a == b)
-        print(f"Parsing Error: {parsing_errors}/{BATCH_SIZE}")
-        print(f"Correct: {correct}/{BATCH_SIZE}")
-        total_predictions += correct
-        total_parse_error += parsing_errors
+    # total_predictions = 0
+    # total_parse_error = 0
 
-        # print("Press Enter to continue...")
-        # input()
+    # for X, y in tqdm(data_loader):
+    #     meta_prompts = process(
+    #         data=X,
+    #         target="Survived",
+    #         target_values=CHOICE,
+    #     )
 
-    # Accuracy: 0.720 (local attempt)
-    # Parsing Error: 10/179 (local attempt)
+    #     answer = ["ALIVE" if y_i == 1 else "DEAD" for y_i in y]
+    #     prompts = loader.generate(meta_prompts, PROMPT_SAMPLING_PARAMS)
 
-    # Accuracy: 0.792 (api attempt)
-    print(f"Accuracy: {total_predictions / len(data_loader.dataset)}")
-    print(f"Parsing Error: {total_parse_error}/{len(data_loader.dataset)}")
+    #     if isinstance(prompts, str):
+    #         prompts = [prompts]
+
+    #     y_pred = server.request(prompts, INFERENCE_SAMPLING_PARAMS)
+    #     flatten_y_pred = [p for sample in y_pred for p in sample]
+    #     parsed_y_pred = [parse(p) for p in flatten_y_pred]
+
+    #     parsing_errors = sum(1 for pred in parsed_y_pred if pred == "ERROR")
+    #     correct = sum(1 for a, b in zip(answer, parsed_y_pred) if a == b)
+    #     total_predictions += correct
+    #     total_parse_error += parsing_errors
+
+    # print(f"Accuracy: {total_predictions / len(data_loader.dataset)}")
+    # print(f"Parsing Error: {total_parse_error}/{len(data_loader.dataset)}")

@@ -83,30 +83,30 @@ class TitanicDataset(Dataset):
     def __init__(
         self,
         path: str,
-        target: str = "Survived",
-        target_values: list = [0, 1],
         train: bool = True,
         shuffle: bool = True,
         train_size: float = 0.8,
-        random_state: int = 42,
     ):
         super().__init__()
-        self.target = target
-        self.target_values = target_values
+        self.target = "Survived"
+        self.target_values = ["DEAD", "ALIVE"]
+
         df = pd.read_csv(path)
 
         assert (
-            target in df.columns
-        ), f"Target column '{target}' not found in the dataframe."
+            self.target in df.columns
+        ), f"Target column '{self.target}' not found in the dataframe."
 
-        X = df.drop(columns=[target])
-        y = df[target]
+        self.feature_labels = df.drop(columns=[self.target]).columns.tolist()
+
+        X = df.drop(columns=[self.target])
+        y = df[self.target]
 
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
             train_size=train_size,
-            random_state=random_state,
+            random_state=42,
             shuffle=shuffle,
             stratify=y,
         )
@@ -118,6 +118,7 @@ class TitanicDataset(Dataset):
         return len(self.X)
 
     def __getitem__(self, idx):
+        # X_dict = {k: v for k, v in self.X.iloc[idx].to_dict().items()}
         X_dict = str(self.X.iloc[idx].to_dict())
         y_value = self.y.iloc[idx].item()
         return X_dict, y_value

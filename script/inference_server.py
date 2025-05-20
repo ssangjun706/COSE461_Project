@@ -8,7 +8,7 @@ root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
-from src.vllm_module import LLMTrainer
+from src.model import InferenceModel
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -22,11 +22,11 @@ class InferenceRequest(BaseModel):
 
 
 class InferenceResponse(BaseModel):
-    text: list[list[str]]
+    text: list[str]
     time_taken: float
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3,4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,4,5,6"
 
 model = None
 
@@ -44,7 +44,7 @@ args = parser.parse_args()
 async def lifespan(_: FastAPI):
     global model
 
-    model = LLMTrainer(
+    model = InferenceModel(
         model_name=args.model_name,
         tensor_parallel_size=args.tensor_parallel_size,
     )
@@ -64,12 +64,13 @@ async def generate_text(request: InferenceRequest):
         return {"error": "Model not loaded yet", "time_taken": 0}
 
     start_time = time.time()
-    outputs = model.generate(
-        prompts=request.prompts, sampling_params=request.sampling_params
+    text = model.generate(
+        prompts=request.prompts,
+        sampling_params=request.sampling_params,
     )
     time_taken = time.time() - start_time
 
-    return {"text": outputs, "time_taken": time_taken}
+    return {"text": text, "time_taken": time_taken}
 
 
 @app.get("/health", response_model=bool)

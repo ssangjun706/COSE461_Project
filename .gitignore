@@ -12,11 +12,5 @@ wandb/
 # Environment files
 .env
 
-# Temp files
-.*
-
 # Data files
-*.csv
-*.json
 *.zip
-dataset/

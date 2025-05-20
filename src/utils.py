@@ -1,6 +1,15 @@
 import requests
+import re
 
 from typing import Any
+
+
+def parse(text: str) -> str:
+    match = re.search(r"\\boxed\{(DEAD|ALIVE)\}", text)
+    if match and len(match.groups()) == 1:
+        return match.group(1)
+    else:
+        return "ERROR"
 
 
 def process(
@@ -50,14 +59,12 @@ class APIServer:
         self,
         prompts: list[str],
         sampling_params: dict,
-        decode: bool | None = True,
     ):
         response = requests.post(
             f"{self.url}/generate",
             json={
                 "prompts": prompts,
                 "sampling_params": sampling_params,
-                "decode": decode,
             },
         )
         response.raise_for_status()
