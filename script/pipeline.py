@@ -9,8 +9,8 @@ root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
-from src.utils import APIServer, process, parse
-from src.model import PromptModel, RewardModel
+from src.utils import process, parse
+from src.model import PromptModel, RewardModel, APIServer
 from src.dataset import TitanicDataset
 
 

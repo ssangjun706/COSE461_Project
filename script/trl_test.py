@@ -8,14 +8,14 @@ if root not in sys.path:
 
 import src.hf_utils
 from src.dataset import TitanicDataset
-from src.model import RewardModel, APIServer
+from src.model import RewardModel, APIServer, PromptModel
 
-from transformers import AutoModelForImageTextToText, AutoTokenizer
 from peft import LoraConfig
 
 from trl.trainer import PPOConfig, PPOTrainer
 from trl.core import LengthSampler
 from tqdm import tqdm
+
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
@@ -46,28 +46,19 @@ print(f"Using device: {device}")
 
 api_server = APIServer(host="localhost", port=23456)
 reward_model = RewardModel(
-    api=api_server,
+    api_server=api_server,
     target_values=dataset.target_values,
 )
 
 
-tokenizer = AutoTokenizer.from_pretrained(ppo_config.model_name)
-tokenizer.pad_token = tokenizer.eos_token
-
-model = AutoModelForImageTextToText.from_pretrained(
-    model_name,
-    torch_dtype=torch.bfloat16,
-    device_map="auto",
-    peft_config=lora_config,
-    trust_remote_code=True,
-)
+prompt_model = PromptModel()
+tokenizer = prompt_model.tokenizer
 
 ppo_trainer = PPOTrainer(
-    config=ppo_config,
-    model=model,
+    args=ppo_config,
+    model=prompt_model.model,
     ref_model=None,
-    tokenizer=tokenizer,
-    dataset=dataset,
+    train_dataset=dataset,
 )
 
 generation_kwargs = {
@@ -100,12 +91,9 @@ for epoch in range(num_ppo_epochs):
             response_tensors, skip_special_tokens=True
         )
 
+        breakpoint()
         rewards = reward_model.evaluate(batch["response"]).to(device)
 
-        # PPO 스텝 실행: 경험을 바탕으로 모델 업데이트
-        # query_tensors: 입력 텐서 (토큰 ID)
-        # response_tensors: 모델이 생성한 응답 텐서 (토큰 ID)
-        # rewards: 스칼라 보상 값 리스트 (torch.tensor 형태)
         try:
             stats = ppo_trainer.step(
                 query_tensors.squeeze(dim=0), response_tensors.squeeze(dim=0), rewards
