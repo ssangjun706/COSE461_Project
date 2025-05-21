@@ -10,7 +10,7 @@ if root not in sys.path:
     sys.path.append(root)
 
 from src.utils import APIServer, process, parse
-from src.model import PromptModel
+from src.model import PromptModel, RewardModel
 from src.dataset import TitanicDataset
 
 
