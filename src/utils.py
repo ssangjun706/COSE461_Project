@@ -1,15 +1,14 @@
-import requests
 import re
 
 from typing import Any
 
 
-def parse(text: str) -> str:
-    match = re.search(r"\\boxed\{(DEAD|ALIVE)\}", text)
-    if match and len(match.groups()) == 1:
-        return match.group(1)
-    else:
-        return "ERROR"
+# def parse(text: str) -> str:
+#     match = re.search(r"\\boxed\{(DEAD|ALIVE)\}", text)
+#     if match and len(match.groups()) == 1:
+#         return match.group(1)
+#     else:
+#         return "ERROR"
 
 
 def process(
@@ -47,36 +46,3 @@ The model should respond with one of: {target_values}.
 """
 
     return list(map(build_meta_prompt, data))
-
-
-class APIServer:
-    def __init__(self, host: str, port: int):
-        self.host = host
-        self.port = port
-        self.url = f"http://{self.host}:{self.port}"
-
-    def request(
-        self,
-        prompts: list[str],
-        sampling_params: dict,
-    ):
-        response = requests.post(
-            f"{self.url}/generate",
-            json={
-                "prompts": prompts,
-                "sampling_params": sampling_params,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data["text"]
-
-    def check_status(self):
-        try:
-            response = requests.get(f"{self.url}/health")
-            if response.status_code != 200 or not response.json():
-                print("Error: Server is not ready")
-                exit(1)
-        except Exception as e:
-            print(f"Error connecting to inference server: {e}")
-            exit(1)
