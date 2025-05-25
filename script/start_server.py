@@ -9,7 +9,7 @@ if root not in sys.path:
     sys.path.append(root)
 
 
-from src.model import InferenceModel
+from src.inference import InferenceModelWrapper
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -19,8 +19,8 @@ import sys
 
 class InferenceRequest(BaseModel):
     prompts: list[str]
-    sampling_params: dict
-
+    # sampling_params: dict
+    max_tokens: int
 
 class InferenceResponse(BaseModel):
     text: list[str]
@@ -45,7 +45,7 @@ args = parser.parse_args()
 async def lifespan(_: FastAPI):
     global model
 
-    model = InferenceModel(
+    model = InferenceModelWrapper(
         model_name=args.model_name,
         tensor_parallel_size=args.tensor_parallel_size,
     )
@@ -67,7 +67,8 @@ async def generate_text(request: InferenceRequest):
     start_time = time.time()
     text = model.generate(
         prompts=request.prompts,
-        sampling_params=request.sampling_params,
+        # sampling_params=request.sampling_params,
+        max_tokens=request.max_tokens,
     )
     time_taken = time.time() - start_time
 
@@ -82,4 +83,4 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run("inference_server:app", host="localhost", port=23456)
+    uvicorn.run("start_server:app", host="localhost", port=23456)

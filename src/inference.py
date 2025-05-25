@@ -2,8 +2,7 @@ import time
 import logging
 import requests
 
-from src.hf_utils import find_model_path
-
+from .hf_utils import find_model_path
 from vllm import LLM, SamplingParams
 
 logging.basicConfig(
@@ -13,7 +12,7 @@ logging.basicConfig(
 )
 
 
-class InferenceModel:
+class InferenceModelWrapper:
     def __init__(
         self,
         model_name: str,
@@ -40,15 +39,10 @@ class InferenceModel:
     def generate(
         self,
         prompts: list[str],
-        sampling_params: dict,
+        max_tokens: int,
     ) -> list[str]:
         start_time = time.time()
-
-        self.sampling_params = SamplingParams(n=sampling_params["n"])
-
-        for param, value in sampling_params.items():
-            if hasattr(self.sampling_params, param):
-                setattr(self.sampling_params, param, value)
+        self.sampling_params = SamplingParams(n=1, max_tokens=max_tokens)
 
         try:
             batch_outputs = self.instance.generate(
@@ -68,22 +62,22 @@ class InferenceModel:
         return flattened_outputs
 
 
-class APIServer:
+class InferenceModel:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
         self.url = f"http://{self.host}:{self.port}"
 
-    def request(
+    def generate(
         self,
         prompts: list[str],
-        sampling_params: dict,
+        max_tokens: int,
     ):
         response = requests.post(
             f"{self.url}/generate",
             json={
                 "prompts": prompts,
-                "sampling_params": sampling_params,
+                "max_tokens": max_tokens,
             },
         )
         response.raise_for_status()

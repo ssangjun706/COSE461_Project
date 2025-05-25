@@ -8,6 +8,8 @@ wheels/
 
 # Log files
 wandb/
+results/
+checkpoints/
 
 # Environment files
 .env
