@@ -39,10 +39,10 @@ class InferenceModelWrapper:
     def generate(
         self,
         prompts: list[str],
-        max_tokens: int,
+        sampling_params: dict,
     ) -> list[str]:
         start_time = time.time()
-        self.sampling_params = SamplingParams(n=1, max_tokens=max_tokens)
+        self.sampling_params = SamplingParams(**sampling_params)
 
         try:
             batch_outputs = self.instance.generate(
@@ -71,13 +71,13 @@ class InferenceModel:
     def generate(
         self,
         prompts: list[str],
-        max_tokens: int,
+        sampling_params: dict,
     ):
         response = requests.post(
             f"{self.url}/generate",
             json={
                 "prompts": prompts,
-                "max_tokens": max_tokens,
+                "sampling_params": sampling_params,
             },
         )
         response.raise_for_status()

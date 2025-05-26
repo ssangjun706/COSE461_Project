@@ -163,7 +163,7 @@ class BaseDataset(Dataset):
         target_values: list[str],
         train: bool = True,
         shuffle: bool = True,
-        train_size: float = 0.8,
+        train_size: float | None = 0.8,
     ):
         super().__init__()
         self.target = target
@@ -208,17 +208,21 @@ class TitanicDataset(BaseDataset):
         X = df.drop(columns=[self.target])
         y = df[self.target]
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            train_size=train_size,
-            random_state=42,
-            shuffle=shuffle,
-            stratify=y,
-        )
+        if train_size:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X,
+                y,
+                train_size=train_size,
+                random_state=42,
+                shuffle=shuffle,
+                stratify=y,
+            )
 
-        self.X = X_train if train else X_test
-        self.y = y_train if train else y_test
+            self.X = X_train if train else X_test
+            self.y = y_train if train else y_test
+        else:
+            self.X = X
+            self.y = y
 
     def __getitem__(self, idx: int) -> tuple[str, str]:
         X = build_meta_prompt(

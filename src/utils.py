@@ -1,9 +1,48 @@
-import json
 import os
-from datetime import datetime
+import time
+import logging
+import json
 import numpy as np
-from scipy import stats
+
+from datetime import datetime
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from typing import Optional
+
+
+class Timer:
+    def __init__(self, name: Optional[str] = None, verbose: bool = True):
+        logging.basicConfig(
+            level=logging.INFO,
+            format="[%(levelname)s] %(message)s",
+            handlers=[logging.StreamHandler()],
+        )
+
+        self.name = name or "Timer"
+        self.verbose = verbose
+        self.start_time = None
+        self.end_time = None
+        self.elapsed_time = None
+    
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end_time = time.time()
+        self.elapsed_time = self.end_time - self.start_time
+        
+        if self.verbose:
+            logging.info(f"Elapsed time: {self.elapsed_time:.3f}s")
+    
+    def get_elapsed_time(self) -> float:
+        """Get the elapsed time in seconds."""
+        if self.elapsed_time is None:
+            raise RuntimeError("Timer has not been used yet or is still running")
+        return self.elapsed_time
+    
+    def get_elapsed_time_ms(self) -> float:
+        """Get the elapsed time in milliseconds."""
+        return self.get_elapsed_time() * 1000
 
 
 def calculate_metrics(

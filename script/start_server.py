@@ -19,8 +19,7 @@ import sys
 
 class InferenceRequest(BaseModel):
     prompts: list[str]
-    # sampling_params: dict
-    max_tokens: int
+    sampling_params: dict
 
 class InferenceResponse(BaseModel):
     text: list[str]
@@ -67,8 +66,7 @@ async def generate_text(request: InferenceRequest):
     start_time = time.time()
     text = model.generate(
         prompts=request.prompts,
-        # sampling_params=request.sampling_params,
-        max_tokens=request.max_tokens,
+        sampling_params=request.sampling_params,
     )
     time_taken = time.time() - start_time
 
