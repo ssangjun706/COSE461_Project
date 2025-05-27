@@ -9,21 +9,13 @@ from src.dataset import TitanicDataset
 from src.inference import InferenceModel
 from src.trainer import PPOTrainer, PPOConfig
 from src.utils import evaluate_multiple_runs, calculate_metrics
-
+from config import EVAL_CONFIG
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
-    config = PPOConfig(
-        batch_size=16,
-        learning_rate=3e-7,
-        max_epochs=1,
-        use_lora=True,
-        max_new_tokens=512,
-        use_wandb=False,
-        resume_from_checkpoint="../checkpoints/final_model",
-        project_name="ape-finetune",
-    )
+    config = PPOConfig(**EVAL_CONFIG)
+    config.resume_from_checkpoint = "../checkpoints/checkpoint-140"
     inference_model = InferenceModel(host="localhost", port=23456)
     inference_model.check_status()
 
@@ -37,11 +29,10 @@ if __name__ == "__main__":
         val_dataset=val_dataset,
     )
 
-    # Evaluate
-    num_epochs = 20
+    num_epochs = 1
     evaluation_results = []
     for _ in range(num_epochs):
-        y_pred, y_true = trainer.evaluate(use_tqdm=True, no_metrics=True)
+        y_pred, y_true = trainer.evaluate(use_tqdm=True, use_metrics=False)
         evaluation_results.append((y_pred, y_true))
         print(calculate_metrics(y_pred, y_true))
 

@@ -305,6 +305,14 @@ class RewardModel:
         # Convert to tensor
         rewards_tensor = torch.tensor(all_rewards, dtype=torch.float32, requires_grad=False)
         
+        # Skip normalization to preserve reward magnitude for better interpretability
+        # Original normalization code:
+        # if len(all_rewards) > 1:
+        #     rewards_mean = rewards_tensor.mean()
+        #     rewards_std = rewards_tensor.std()
+        #     if rewards_std > 0:
+        #         rewards_tensor = (rewards_tensor - rewards_mean) / (rewards_std + 1e-8)
+        
         # Log some statistics for debugging
         if len(detailed_scores) > 0:
             avg_components = {}
@@ -312,6 +320,7 @@ class RewardModel:
                 avg_components[key] = np.mean([score[key] for score in detailed_scores])
             
             logging.debug(f"Average reward components: {avg_components}")
+            logging.debug(f"Reward statistics - Mean: {rewards_tensor.mean():.4f}, Std: {rewards_tensor.std():.4f}")
         
         return rewards_tensor, y_pred
 
