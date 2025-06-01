@@ -1,24 +1,21 @@
 import os
 import sys
 
+# ADA: Automatic Data Augmentation via Large Language Model
 root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if root not in sys.path:
     sys.path.append(root)
 
 from src.dataset import TitanicDataset
 from src.inference import InferenceModel
-from src.trainer_ape import APETrainer, APEConfig
+from src.trainer import PPOTrainer, PPOConfig
+from config import TRAIN_CONFIG
 
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
-    config = APEConfig(
-        batch_size=16,
-        learning_rate=3e-7,
-        use_wandb=True,
-        project_name="ape-finetune",
-    )
+    config = PPOConfig()
 
     inference_model = InferenceModel(host="localhost", port=23456)
     inference_model.check_status()
@@ -26,7 +23,7 @@ if __name__ == "__main__":
     train_dataset = TitanicDataset(path="../dataset/titanic-dataset.csv")
     val_dataset = TitanicDataset(path="../dataset/titanic-dataset.csv", train=False)
 
-    trainer = APETrainer(
+    trainer = PPOTrainer(
         config=config,
         inference_model=inference_model,
         train_dataset=train_dataset,

@@ -496,6 +496,7 @@ dependencies = [
     { name = "accelerate" },
     { name = "bitsandbytes" },
     { name = "datasets" },
+    { name = "deepspeed" },
     { name = "flash-attn" },
     { name = "huggingface-hub" },
     { name = "ninja" },
@@ -524,6 +525,7 @@ requires-dist = [
     { name = "accelerate", specifier = ">=1.6.0" },
     { name = "bitsandbytes", specifier = ">=0.45.5" },
     { name = "datasets", specifier = ">=3.5.1" },
+    { name = "deepspeed", specifier = ">=0.16.9" },
     { name = "flash-attn", specifier = ">=2.7.4.post1" },
     { name = "huggingface-hub", specifier = ">=0.30.2" },
     { name = "ninja", specifier = ">=1.11.1.4" },
@@ -536,7 +538,7 @@ requires-dist = [
     { name = "torch", specifier = "==2.6.0" },
     { name = "transformers", specifier = ">=4.51.3" },
     { name = "triton", specifier = "==3.2.0" },
-    { name = "trl", specifier = ">=0.17.0" },
+    { name = "trl", extras = ["judge"], specifier = ">=0.17.0" },
     { name = "vllm", specifier = ">=0.8.5.post1" },
     { name = "wandb", specifier = ">=0.19.10" },
 ]
@@ -628,6 +630,25 @@ sdist = { url = "https://files.pythonhosted.org/packages/43/fa/6d96a0978d19e17b6
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4e/8c/f3147f5c4b73e7550fe5f9352eaa956ae838d5c51eb58e7a25b9f3e2643b/decorator-5.2.1-py3-none-any.whl", hash = "sha256:d316bb415a2d9e2d2b3abcc4084c6502fc09240e292cd76a76afc106a1c8e04a", size = 9190, upload-time = "2025-02-24T04:41:32.565Z" },
 ]
+
+[[package]]
+name = "deepspeed"
+version = "0.16.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "einops" },
+    { name = "hjson" },
+    { name = "msgpack" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "py-cpuinfo" },
+    { name = "pydantic" },
+    { name = "torch" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/5c/7542904cddfaa50a9a7ae6770349d468773359f5af1718865452cea8729d/deepspeed-0.16.9.tar.gz", hash = "sha256:88dc08986cd321047c37c2d0f1edd6faac498a1b52eb486d559164362c6b9011", size = 1513272, upload-time = "2025-05-22T21:57:50.547Z" }
 
 [[package]]
 name = "deprecated"
@@ -1065,6 +1086,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/29/89/1f31853bf378f0ceb3363c07fd8a12af9b904b1f8c21e65eb5c19397bc98/hf_xet-1.1.0-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:68c5813a6074aa36e12ef5983230e3b03148cce61e0fcdd294096493795565b4", size = 53072672, upload-time = "2025-04-29T21:15:44.743Z" },
     { url = "https://files.pythonhosted.org/packages/b5/9f/5ecb92b18a4b2135a72a95dc08bcbeda9176f46642c745ee052420d2aea8/hf_xet-1.1.0-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:4ee9222bf9274b1c198b88a929de0b5a49349c4962d89c5b3b2f0f7f47d9761c", size = 53521053, upload-time = "2025-04-29T21:15:48.252Z" },
     { url = "https://files.pythonhosted.org/packages/53/d6/cb32842cbf1cf5a154b41fa918a2fd86003af9bca227a2397cd7f312a8a6/hf_xet-1.1.0-cp37-abi3-win_amd64.whl", hash = "sha256:73153eab9abf3d6973b21e94a67ccba5d595c3e12feb8c0bf50be02964e7f126", size = 4204376, upload-time = "2025-04-29T21:15:52.69Z" },
+]
+
+[[package]]
+name = "hjson"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/e5/0b56d723a76ca67abadbf7fb71609fb0ea7e6926e94fcca6c65a85b36a0e/hjson-3.1.0.tar.gz", hash = "sha256:55af475a27cf83a7969c808399d7bccdec8fb836a07ddbd574587593b9cdcf75", size = 40541, upload-time = "2022-08-13T02:53:01.919Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/7f/13cd798d180af4bf4c0ceddeefba2b864a63c71645abc0308b768d67bb81/hjson-3.1.0-py3-none-any.whl", hash = "sha256:65713cdcf13214fb554eb8b4ef803419733f4f5e551047c9b711098ab7186b89", size = 54018, upload-time = "2022-08-13T02:52:59.899Z" },
 ]
 
 [[package]]

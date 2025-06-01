@@ -15,7 +15,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
     config = PPOConfig(**EVAL_CONFIG)
-    config.resume_from_checkpoint = "../checkpoints/checkpoint-140"
+    config.resume_from_checkpoint = "../checkpoints/checkpoint-75"
     inference_model = InferenceModel(host="localhost", port=23456)
     inference_model.check_status()
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         val_dataset=val_dataset,
     )
 
-    num_epochs = 1
+    num_epochs = 20
     evaluation_results = []
     for _ in range(num_epochs):
         y_pred, y_true = trainer.evaluate(use_tqdm=True, use_metrics=False)

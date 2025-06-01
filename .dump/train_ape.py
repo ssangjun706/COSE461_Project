@@ -7,14 +7,13 @@ if root not in sys.path:
 
 from src.dataset import TitanicDataset
 from src.inference import InferenceModel
-from src.trainer import PPOTrainer, PPOConfig
-from config import TRAIN_CONFIG, DEBUG_CONFIG
+from src.trainer_ape import APETrainer, APEConfig
 
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
-    config = PPOConfig(**TRAIN_CONFIG)
+    config = APEConfig()
 
     inference_model = InferenceModel(host="localhost", port=23456)
     inference_model.check_status()
@@ -22,7 +21,7 @@ if __name__ == "__main__":
     train_dataset = TitanicDataset(path="../dataset/titanic-dataset.csv")
     val_dataset = TitanicDataset(path="../dataset/titanic-dataset.csv", train=False)
 
-    trainer = PPOTrainer(
+    trainer = APETrainer(
         config=config,
         inference_model=inference_model,
         train_dataset=train_dataset,

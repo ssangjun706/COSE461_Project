@@ -30,7 +30,7 @@ logging.basicConfig(
 
 @dataclass
 class APEConfig:
-    learning_rate: float = 3e-7
+    learning_rate: float = 1e-5
     batch_size: int = 24
 
     use_lora: bool = True
@@ -41,8 +41,8 @@ class APEConfig:
     max_new_tokens: int = 512 
 
     max_epochs: int = 10
-    save_freq: int = 25
-    eval_freq: int = 50
+    save_freq: int = 50
+    eval_freq: int = 25
 
     reward_lambda: float = 1.0
     entropy_weight: float = 0.01
@@ -94,21 +94,15 @@ class APETrainer:
         )
 
 
-        if self.config.use_lora:
-            self.lora_config = LoraConfig(
+        self.lora_config = LoraConfig(
                 r=self.config.lora_r,
                 lora_alpha=self.config.lora_alpha,
                 lora_dropout=self.config.lora_dropout,
                 target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
-                use_dora=True,
-            )
+        )
 
-            self.model = get_peft_model(_base_model, self.lora_config)
-            self.hidden_size = 5120
-        else:
-            self.model = _base_model
-            self.hidden_size = 4096
-        
+        self.model = get_peft_model(_base_model, self.lora_config)
+        self.hidden_size = 5120
         
         self.device = self.model.device
         logging.info(f"Model loaded successfully in {(time.time() - start_time):.2f}s")
@@ -142,13 +136,14 @@ class APETrainer:
 
         input_length = tokenized_inputs["input_ids"].shape[-1]
         
-        outputs = self.model.generate(
-            **tokenized_inputs,
-            **generation_config,
-            return_dict_in_generate=True,
-            output_scores=output_scores,
-            output_hidden_states=output_hidden_states,
-        )
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **tokenized_inputs,
+                **generation_config,
+                return_dict_in_generate=True,
+                output_scores=output_scores,
+                output_hidden_states=output_hidden_states,
+            )
 
         generated_tokens = outputs.sequences[:, input_length:]
         log_probs = None
